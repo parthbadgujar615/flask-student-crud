@@ -9,7 +9,7 @@
                 <h4 class="mb-0">Edit Student</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="/edit/{{ student.id }}">
+                <form method="POST" action="{{ url_for('edit_student', id=student.id) }}">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Full Name *</label>
                         <input type="text" name="name" class="form-control"
@@ -32,7 +32,7 @@
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-warning">Update Student</button>
-                        <a href="/" class="btn btn-outline-secondary">Cancel</a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

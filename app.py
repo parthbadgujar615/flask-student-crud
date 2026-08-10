@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, render_template, request, redirect, url_for, flash
+from sqlalchemy.exc import IntegrityError
 
 from config import Config
 from models import db, Student
@@ -17,6 +18,13 @@ with app.app_context():
     db.create_all()
 
 
+# ── Health check ───────────────────────────────────────────────────────────
+
+@app.route("/health")
+def health_check():
+    return {"status": "ok"}, 200
+
+
 # ── READ: Show all students ────────────────────────────────────────────────
 
 @app.route("/")
@@ -30,10 +38,14 @@ def index():
 @app.route("/add", methods=["GET", "POST"])
 def add_student():
     if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"]
-        phone = request.form["phone"]
-        course = request.form["course"]
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        phone = request.form.get("phone", "").strip()
+        course = request.form.get("course", "").strip()
+
+        if not name or not email:
+            flash("Name and Email are required!", "danger")
+            return redirect(url_for("add_student"))
 
         student = Student(
             name=name,
@@ -42,10 +54,14 @@ def add_student():
             course=course,
         )
 
-        db.session.add(student)
-        db.session.commit()
-
-        flash("Student added successfully!", "success")
+        try:
+            db.session.add(student)
+            db.session.commit()
+            flash("Student added successfully!", "success")
+        except IntegrityError:
+            db.session.rollback()
+            flash("A student with this email already exists!", "danger")
+            return redirect(url_for("add_student"))
 
         return redirect(url_for("index"))
 
@@ -59,14 +75,25 @@ def edit_student(id):
     student = Student.query.get_or_404(id)
 
     if request.method == "POST":
-        student.name = request.form["name"]
-        student.email = request.form["email"]
-        student.phone = request.form["phone"]
-        student.course = request.form["course"]
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
 
-        db.session.commit()
+        if not name or not email:
+            flash("Name and Email are required!", "danger")
+            return redirect(url_for("edit_student", id=id))
 
-        flash("Student updated successfully!", "success")
+        student.name = name
+        student.email = email
+        student.phone = request.form.get("phone", "").strip()
+        student.course = request.form.get("course", "").strip()
+
+        try:
+            db.session.commit()
+            flash("Student updated successfully!", "success")
+        except IntegrityError:
+            db.session.rollback()
+            flash("A student with this email already exists!", "danger")
+            return redirect(url_for("edit_student", id=id))
 
         return redirect(url_for("index"))
 
@@ -75,7 +102,7 @@ def edit_student(id):
 
 # ── DELETE: Remove a student ───────────────────────────────────────────────
 
-@app.route("/delete/<int:id>")
+@app.route("/delete/<int:id>", methods=["POST"])
 def delete_student(id):
     student = Student.query.get_or_404(id)
 
@@ -93,7 +120,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
 
     app.run(
-        debug=True,
+        debug=os.environ.get("FLASK_DEBUG", "0") == "1",
         host="0.0.0.0",
         port=port,
     )

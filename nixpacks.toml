@@ -1,0 +1,8 @@
+[phases.setup]
+aptPkgs = ["libpq-dev"]
+
+[start]
+cmd = "gunicorn app:app"
+
+[variables]
+PYTHON_VERSION = "3.12"
