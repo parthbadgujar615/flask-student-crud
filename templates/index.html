@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">All Students</h2>
+    <a href="/add" class="btn btn-primary">+ Add Student</a>
+</div>
+
+{% if students %}
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th><th>Name</th><th>Email</th>
+                    <th>Phone</th><th>Course</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.phone or '-' }}</td>
+                    <td>{{ student.course or '-' }}</td>
+                    <td>
+                        <a href="/edit/{{ student.id }}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="/delete/{{ student.id }}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Delete this student?')">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No students yet. <a href="/add">Add the first student!</a>
+</div>
+{% endif %}
+
+{% endblock %}
